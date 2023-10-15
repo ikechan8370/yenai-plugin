@@ -192,7 +192,7 @@ export const helpList = [{
     },
     {
       icon: 13,
-      title: '#赞我',
+      title: '#e.bot.',
       desc: '给你点一个大大的赞'
     },
     {

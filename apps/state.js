@@ -103,7 +103,7 @@ export class NewState extends plugin {
       // 在线状态
       const onlineStatus = status[bot.status] || "在线"
       // 登录平台版本
-      const platform = bot.apk ? `${bot.apk.display} v${bot.apk.version}` : bot.version.version || "未知"
+      const platform = bot.apk ? `${bot.apk.display} v${bot.apk.version}` : (bot.version?.app_version ? bot.version?.app_version : bot.version.version) || "未知"
       // 收
       const recv = bot.stat?.recv_msg_cnt || "未知"
       // 好友数
@@ -113,7 +113,7 @@ export class NewState extends plugin {
       // 运行时间
       const runTime = common.formatTime(Date.now() / 1000 - bot.stat?.start_time, 'dd天hh小时mm分', false)
       // Bot版本
-      const botVersion = bot.version ? `${bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
+      const botVersion = bot.version ? `${bot.version.app_full_name ? bot.version.app_full_name : bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
       BotStatus += `<div class="box">
     <div class="tb">
         <div class="avatar">
