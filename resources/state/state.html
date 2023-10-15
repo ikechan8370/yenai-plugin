@@ -4,25 +4,7 @@
 <link rel="stylesheet" href="{{_res_path}}state/state.css">
 {{/block}}
 {{block 'main'}}
-<div class="box">
-    <div class="tb">
-        <div class="avatar">
-            <img src="{{portrait}}"
-                onerror="this.src= '{{_res_path}}state/img/default_avatar.png'; this.onerror = null;">
-        </div>
-
-        <div class="header">
-            <h1>{{nickname}}</h1>
-            <hr noshade>
-            <p>{{status}}({{platform}}) | 收{{recv}} | 发{{sent}} | 图片{{screenshot}} | 好友{{friend_quantity}} |
-                群{{group_quantity}}
-            </p>
-            <p>Yunzai-Bot 已运行 {{runTime}} | 系统运行 {{systime}}</p>
-            <p>{{calendar}} | Nodejs {{nodeversion}} | {{osinfo.platform}}</p>
-        </div>
-    </div>
-
-</div>
+{{@BotStatus}}
 <div class="box">
     <ul class="info">
         {{each visualData group}}
@@ -84,6 +66,12 @@
         const chart = echarts.init(document.getElementById('Chart'), 'westeros', {
             renderer: 'svg'
         })
+        const backdrop = chartData.backdrop
+        // 背景api
+        if (backdrop) {
+            var container = document.getElementById('container')
+            container.style.backgroundImage = 'url(' + backdrop + ')'
+        }
         const by = (value) => {
             value = value?.value ?? value
             let units = ['B', 'KB', 'MB', 'GB', 'TB'] // 定义单位数组
@@ -179,22 +167,30 @@
         chart.setOption(option)
     </script>
 </div>
+
 {{/if}}
+{{if otherInfo}}
 <div class="box">
+    {{each otherInfo}}
     <div class="speed">
-        <p>系统</p>
-        <p>{{osinfo.distro}}</p>
+        <p>{{$value.first}}</p>
+        <p>{{@$value.tail}}</p>
     </div>
-    {{if network}}
-    <div class="speed">
-        <p>{{network.iface}}</p>
-        <p>↑{{network.tx_sec}}/s | ↓{{network.rx_sec}}/s</p>
-    </div>
-    {{/if}}
-    <div class="speed">
-        <p>插件</p>
-        <p>{{plugin.plugins}} plugin | {{plugin.js}} js</p>
-    </div>
+    {{/each}}
 </div>
+{{/if}}
+
+{{if psTest}}
+<div class="box">
+    {{each psTest}}
+    <div class="speed">
+        <p>{{$value.first}}</p>
+        <p>{{@$value.tail}}</p>
+    </div>
+    {{/each}}
+</div>
+{{/if}}
+
 {{@FastFetch}}
+
 {{/block}}

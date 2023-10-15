@@ -1,7 +1,9 @@
 import { common } from '../../model/index.js'
 import { Config } from '../../components/index.js'
 
-Bot.on('message', async (e) => {
+Bot.on?.('message', async (e) => {
+  // 判断是否存在消息
+  if (!e?.message?.length) return false
   // 判断是否为机器人消息
   if (e.user_id == (e.bot ?? Bot).uin) return false
   // 判断是否主人消息
@@ -40,11 +42,11 @@ Bot.on('message', async (e) => {
     e.message_type === 'group'
   ) {
     if (!Config.getGroup(e.group_id).flashPhoto) return false
-    logger.mark('[Yenai-Plugin]群聊闪照')
+    logger.info('[Yenai-Plugin]群聊闪照')
     msg = [
       segment.image(`https://p.qlogo.cn/gh/${e.group_id}/${e.group_id}/100`),
-      '[消息 - 闪照消息]\n',
-      `发送人QQ：${e.user_id}\n`,
+      `[消息(${e.self_id}) - 闪照消息]\n`,
+      `发送人账号：${e.user_id}\n`,
       `发送人昵称：${e.sender.nickname}\n`,
       `来源群号：${e.group_id}\n`,
       `来源群名：${e.group_name}\n`,
@@ -55,11 +57,11 @@ Bot.on('message', async (e) => {
     e.message_type === 'discuss' &&
     Config.whole.flashPhoto
   ) {
-    logger.mark('[Yenai-Plugin]讨论组闪照')
+    logger.info('[Yenai-Plugin]讨论组闪照')
     msg = [
       segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-      '[消息 - 闪照消息]\n',
-      `发送人QQ：${e.user_id}\n`,
+      `[消息(${e.self_id}) - 闪照消息]\n`,
+      `发送人账号：${e.user_id}\n`,
       `发送人昵称：${e.sender.nickname}\n`,
       `讨论组号：${e.discuss_id}\n`,
       `讨论组名：${e.discuss_name}\n`,
@@ -70,11 +72,11 @@ Bot.on('message', async (e) => {
     e.message_type === 'private' &&
     Config.whole.flashPhoto
   ) {
-    logger.mark('[Yenai-Plugin]好友闪照')
+    logger.info('[Yenai-Plugin]好友闪照')
     msg = [
       segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-      '[消息 - 闪照消息]\n',
-      `发送人QQ：${e.user_id}\n`,
+      `[消息(${e.self_id}) - 闪照消息]\n`,
+      `发送人账号：${e.user_id}\n`,
       `发送人昵称：${e.sender.nickname}\n`,
       `闪照链接:${e.message[0].url}`
     ]
@@ -87,11 +89,11 @@ Bot.on('message', async (e) => {
       forwardMsg = arr.msg
       e.message = arr.type
     }
-    logger.mark('[Yenai-Plugin]好友消息')
+    logger.info('[Yenai-Plugin]好友消息')
     msg = [
       segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-      '[消息 - 好友消息]\n',
-      `好友QQ：${e.user_id}\n`,
+      `[消息(${e.self_id}) - 好友消息]\n`,
+      `好友账号：${e.user_id}\n`,
       `好友昵称：${e.sender.nickname}\n`,
       '消息内容：',
       ...e.message
@@ -114,13 +116,13 @@ Bot.on('message', async (e) => {
       forwardMsg = arr.msg
       e.message = arr.type
     }
-    logger.mark('[Yenai-Plugin]群临时消息')
+    logger.info('[Yenai-Plugin]群临时消息')
     // 发送的消息
     msg = [
       segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-      '[消息 - 群临时消息]\n',
+      `[消息(${e.self_id}) - 群临时消息]\n`,
       `来源群号：${e.sender.group_id}\n`,
-      `发送人QQ：${e.user_id}\n`,
+      `发送人账号：${e.user_id}\n`,
       '消息内容：',
       ...e.message
     ]
@@ -141,26 +143,26 @@ Bot.on('message', async (e) => {
       forwardMsg = arr.msg
       e.message = arr.type
     }
-    logger.mark('[Yenai-Plugin]群聊消息')
+    logger.info('[Yenai-Plugin]群聊消息')
     msg = [
       segment.image(`https://p.qlogo.cn/gh/${e.group_id}/${e.group_id}/100`),
-      '[消息 - 群聊消息]\n',
+      `[消息(${e.self_id}) - 群聊消息]\n`,
       `来源群号：${e.group_id}\n`,
       `来源群名：${e.group_name}\n`,
-      `发送人QQ：${e.user_id}\n`,
+      `发送人账号：${e.user_id}\n`,
       `发送人昵称：${e.sender.nickname}\n`,
       '消息内容：',
       ...e.message
     ]
   } else if (e.message_type === 'discuss') {
     if (!Config.getGroup(e.group_id).groupMessage) return false
-    logger.mark('[Yenai-Plugin]讨论组消息')
+    logger.info('[Yenai-Plugin]讨论组消息')
     msg = [
       segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-      '[消息 - 群聊消息]\n',
+      `[消息(${e.self_id}) - 群聊消息]\n`,
       `来源讨论组号：${e.discuss_id}\n`,
       `来源讨论组名：${e.discuss_name}\n`,
-      `发送人QQ：${e.user_id}\n`,
+      `发送人账号：${e.user_id}\n`,
       `发送人昵称：${e.sender.nickname}\n`,
       `消息内容：${e.raw_message}`
     ]

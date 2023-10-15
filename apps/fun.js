@@ -1,22 +1,22 @@
-import plugin from '../../../lib/plugins/plugin.js'
-import fetch from 'node-fetch'
 import _ from 'lodash'
+import fetch from 'node-fetch'
+import plugin from '../../../lib/plugins/plugin.js'
 import { Config } from '../components/index.js'
-import { common, uploadRecord, QQApi, funApi, memes } from '../model/index.js'
-import { successImgs, faildsImgs, heisiType, pandadiuType } from '../constants/fun.js'
+import { faildsImgs, heisiType, pandadiuType, successImgs } from '../constants/fun.js'
+import { QQApi, common, funApi, memes, uploadRecord } from '../model/index.js'
 
 /** API请求错误文案 */
 const API_ERROR = '❎ 出错辣，请稍后重试'
-/** 未启用文案 */
-const SWITCH_ERROR = '主人没有开放这个功能哦(＊／ω＼＊)'
+
 /** 开始执行文案 */
 const START_EXECUTION = '椰奶产出中......'
 
-const picapis = Config.getConfig('picApi')
+const picApis = Config.getConfig('picApi')
 /** 解析匹配模式 */
-let picApiKeys = []
-_.forIn(picapis, (values, key) => {
-  let mode = values.mode !== undefined ? values.mode : picapis.mode
+const picApiKeys = []
+
+_.forIn(picApis, (values, key) => {
+  let mode = values.mode !== undefined ? values.mode : picApis.mode
   key = key.split('|').map(item => mode ? '^' + item + '$' : item).join('|')
   picApiKeys.push(key)
 })
@@ -24,7 +24,7 @@ _.forIn(picapis, (values, key) => {
 const apiReg = new RegExp(`(${picApiKeys.join('|')}|^jktj$|^接口统计$)`)
 
 export class Fun extends plugin {
-  constructor () {
+  constructor() {
     super({
       name: '椰奶娱乐',
       event: 'message',
@@ -35,7 +35,7 @@ export class Fun extends plugin {
           fnc: 'Sing'
         },
         {
-          reg: '^#支付宝到账.*$',
+          reg: '^#支付宝到账',
           fnc: 'ZFB'
         },
         {
@@ -43,7 +43,7 @@ export class Fun extends plugin {
           fnc: 'youdao'
         },
         {
-          reg: '^#?(我要|给我)?(资料卡)?(点赞|赞我)$',
+          reg: '^#?((我要|给我)?(资料卡)?(点赞)?(赞|超|操|草|抄|吵|炒)我)|((赞|超|操|草|抄|吵|炒)(他|她|它|TA|ta|Ta))$',
           fnc: 'thumbUp'
         },
         {
@@ -59,7 +59,7 @@ export class Fun extends plugin {
         //   fnc: 'heisiwu'
         // },
         {
-          reg: '^#?铃声搜索.*$',
+          reg: '^#?铃声搜索',
           fnc: 'lingsheng'
         },
         {
@@ -75,7 +75,7 @@ export class Fun extends plugin {
         //   fnc: 'mengdui'
         // },
         {
-          reg: `^#(${Object.keys(pandadiuType).join('|')})?acg.*$`,
+          reg: `^#(${Object.keys(pandadiuType).join('|')})?acg`,
           fnc: 'acg'
         },
         {
@@ -88,7 +88,7 @@ export class Fun extends plugin {
   }
 
   /** 随机唱鸭 */
-  async Sing (e) {
+  async Sing(e) {
     let data = await funApi.randomSinging()
     if (data.error) return e.reply(data.error)
     await e.reply(await uploadRecord(data.audioUrl, 0, false))
@@ -96,7 +96,7 @@ export class Fun extends plugin {
   }
 
   /** 支付宝语音 */
-  async ZFB (e) {
+  async ZFB(e) {
     let amount = parseFloat(e.msg.replace(/#|支付宝到账|元|圆/g, '').trim())
 
     if (!/^\d+(\.\d{1,2})?$/.test(amount)) return e.reply('你觉得这河里吗！！', true)
@@ -108,7 +108,7 @@ export class Fun extends plugin {
   }
 
   /** 有道翻译 */
-  async youdao (e) {
+  async youdao(e) {
     const msg = e.msg.match(/#(([\u4e00-\u9fa5]{2,6})-)?([\u4e00-\u9fa5]{2,6})?翻译(.*)/)
     // 如果是在群聊中回复，则获取上一条消息作为翻译内容
     if (e.source) {
@@ -125,61 +125,124 @@ export class Fun extends plugin {
   }
 
   /** 点赞 */
-  async thumbUp (e) {
-    if ((e.bot ?? Bot).config.platform == 3) {
+  async thumbUp(e) {
+    if (e.msg.includes(`超`, `操`, `草`, `抄`, `吵`, `炒`)) {
+      this.do = `超`
+    } else {
+      this.do = `赞`
+    }
+    if ((e.bot ?? Bot).config?.platform == 3) {
       return logger.error(`${e.logFnc}手表协议暂不支持点赞请更换协议后重试`)
     }
-    /** 判断是否为好友 */
-    let isFriend = await (e.bot ?? Bot).fl.get(e.user_id)
-    let allowLikeByStrangers = Config.whole.Strangers_love
-    if (!isFriend && !allowLikeByStrangers) return e.reply('不加好友不点🙄', true)
-
-    /** 执行点赞 */
-    let n = 0
-    let failsMsg = '今天已经点过了，还搁这讨赞呢！！！'
-    while (true) {
-      let res = null
-      try {
-        res = await new QQApi(e).thumbUp(e.user_id, 10)
-      } catch (error) {
-        logger.error(error)
-        return e.reply(error.message)
-      }
-      logger.debug(`${e.logFnc}给${e.user_id}点赞`, res)
-      if (res.code != 0) {
-        if (res.code == 1) {
-          failsMsg = '点赞失败，请检查是否开启陌生人点赞或添加好友'
-        } else {
-          failsMsg = res.msg
+    /** 判断是赞自己还是赞别人 */
+    if (e.at && e.msg.includes(`他`, `她`, `它`, `TA`, `ta`, `Ta`)) {
+      /** 判断是否为好友 */
+      let isFriend = await (e.bot ?? Bot).fl.get(e.at)
+      let allowLikeByStrangers = Config.whole.Strangers_love
+      if (!isFriend && !allowLikeByStrangers) return e.reply(`不加好友不${this.do}🙄`, true)
+      /** 执行点赞 */
+      let n = 0
+      let failsMsg = `今天已经${this.do}过了，还搁这讨${this.do}呢！！！`
+      while (true) {
+        let res = null
+        try {
+          res = await new QQApi(e).thumbUp(e.at, 10)
+        } catch (error) {
+          logger.error(error)
+          return common.handleException(e, error)
         }
-        break
-      } else {
-        n += 10
+        logger.debug(`${e.logFnc}给${e.at}点赞`, res)
+        if (res.code != 0) {
+          if (res.code == 1) {
+            failsMsg = `${this.do}失败，请检查是否开启陌生人点赞或添加好友`
+          } else {
+            if (this.do == `超`) {
+              failsMsg = res.msg.replace(/给/g, '超').replace(/点/g, '').replace(/个赞/g, '下')
+            } else {
+              failsMsg = res.msg
+            }
+          }
+          break
+        } else {
+          n += 10
+        }
       }
+      let successMsg = `给${e.at}${this.do}了${n}下哦，记得回我~ ${isFriend ? `` : `(如${this.do}失败请添加好友)`}`
+      const avatar = `https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.at}`
+      const successFn = _.sample(['ganyu', 'zan'])
+
+      /** 判断点赞是否成功 */
+      let msg = n > 0
+        ? [
+          `\n${successMsg}`,
+          segment.image((await memes[successFn](avatar)) ||
+            _.sample(successImgs) + e.user_id)
+        ]
+        : [
+          `\n${failsMsg}`,
+          segment.image((await memes.crawl(avatar)) ||
+            _.sample(faildsImgs) + e.user_id)
+        ]
+
+      /** 回复 */
+      e.reply(msg, true, { at: e.at })
+    } else if (!e.msg.includes(`他`, `她`, `它`, `TA`, `ta`, `Ta`)) {
+      /** 判断是否为好友 */
+      let isFriend = await (e.bot ?? Bot).fl.get(e.user_id)
+      let allowLikeByStrangers = Config.whole.Strangers_love
+      if (!isFriend && !allowLikeByStrangers) return e.reply(`不加好友不${this.do}🙄`, true)
+
+      /** 执行点赞 */
+      let n = 0
+      let failsMsg = `今天已经${this.do}过了，还搁这讨${this.do}呢！！！`
+      while (true) {
+        let res = null
+        try {
+          res = await new QQApi(e).thumbUp(e.user_id, 10)
+        } catch (error) {
+          logger.error(error)
+          return common.handleException(e, error)
+        }
+        logger.debug(`${e.logFnc}给${e.user_id}点赞`, res)
+        if (res.code != 0) {
+          if (res.code == 1) {
+            failsMsg = `${this.do}失败，请检查是否开启陌生人点赞或添加好友`
+          } else {
+            if (this.do == `超`) {
+              failsMsg = res.msg.replace(/给/g, '超').replace(/点/g, '').replace(/个赞/g, '下')
+            } else {
+              failsMsg = res.msg
+            }
+          }
+          break
+        } else {
+          n += 10
+        }
+      }
+      let successMsg = `给你${this.do}了${n}下哦，记得回我~ ${isFriend ? `` : `(如${this.do}失败请添加好友)`}`
+      const avatar = `https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`
+      const successFn = _.sample(['ganyu', 'zan'])
+
+      /** 判断点赞是否成功 */
+      let msg = n > 0
+        ? [
+          `\n${successMsg}`,
+          segment.image((await memes[successFn](avatar)) ||
+            _.sample(successImgs) + e.user_id)
+        ]
+        : [
+          `\n${failsMsg}`,
+          segment.image((await memes.crawl(avatar)) ||
+            _.sample(faildsImgs) + e.user_id)
+        ]
+
+      /** 回复 */
+      e.reply(msg, true, { at: true })
     }
-    let successMsg = `给你点了${n}下哦，记得回我~ ${isFriend ? '' : '(如点赞失败请添加好友)'}`
-    const avatar = `https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`
-    const successFn = _.sample(['ganyu', 'zan'])
-
-    /** 判断点赞是否成功 */
-    let msg = n > 0
-      ? [
-        `\n${successMsg}`,
-        segment.image((await memes[successFn](avatar)) ||
-          _.sample(successImgs) + e.user_id)
-        ]
-      : [
-        `\n${failsMsg}`,
-        segment.image((await memes.crawl(avatar)) ||
-          _.sample(faildsImgs) + e.user_id)
-        ]
-
-    /** 回复 */
-    e.reply(msg, false, { at: true })
   }
 
   // github
-  async GH (e) {
+  async GH(e) {
     const api = 'https://opengraph.githubassets.com'
 
     let reg = /github.com\/[a-zA-Z0-9-]{1,39}\/[a-zA-Z0-9_-]{1,100}(?:\/(?:pull|issues)\/\d+)?/
@@ -196,65 +259,64 @@ export class Fun extends plugin {
   }
 
   // coser
-  async coser (e) {
-    const { sese, sesepro } = Config.getGroup(e.group_id)
-    if (!sese && !sesepro && !e.isMaster) {
-      return e.reply(SWITCH_ERROR)
-    }
+  async coser(e) {
+    if (!common.checkSeSePermission(e)) return false
 
     e.reply(START_EXECUTION)
     await funApi.coser()
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // cos/acg搜索
-  async acg (e) {
-    let { sese, sesepro } = Config.getGroup(e.group_id)
-    if (!sese && !sesepro && !e.isMaster) return e.reply(SWITCH_ERROR)
+  async acg(e) {
+    if (!common.checkSeSePermission(e)) return false
     e.reply(START_EXECUTION)
-    let type = e.msg.match(new RegExp(`^#(${Object.keys(pandadiuType).join('|')})?acg(.*)$`))
+    const reg = new RegExp(`^#(${Object.keys(pandadiuType).join('|')})?acg(.*)$`)
+    const type = e.msg.match(reg)
     await funApi.pandadiu(type[1], type[2])
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 黑丝
-  async heisiwu (e) {
-    if (!Config.getGroup(e.group_id).sesepro && !e.isMaster) return e.reply(SWITCH_ERROR)
+  async heisiwu(e) {
+    if (!common.checkSeSePermission(e, 'sesepro')) return false
 
     e.reply(START_EXECUTION)
     // 获取类型
     const { type, page } = heisiType[e.msg.match(/#?来点(.*)/)[1]]
     await funApi.heisiwu(type, page)
       .then(res => common.recallSendForwardMsg(e, _.take(res, 20)))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 萌堆
-  async mengdui (e) {
-    if (!Config.getGroup(e.group_id).sesepro && !e.isMaster) return e.reply(SWITCH_ERROR)
+  async mengdui(e) {
+    if (!common.checkSeSePermission(e, 'sesepro')) return false
     // 开始执行
     e.reply(START_EXECUTION)
     let regRet = e.msg.match(/#?来点神秘图(s)?(.*)/)
     await funApi.mengdui(regRet[2], regRet[1])
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
-  async xiuren (e) {
-    if (!Config.getGroup(e.group_id).sesepro && !e.isMaster) return e.reply(SWITCH_ERROR)
+  async xiuren(e) {
+    if (!common.checkSeSePermission(e, 'pro')) return false
     // 开始执行
     e.reply(START_EXECUTION)
     await funApi.xiuren(e.msg.replace(/#?来点/, ''))
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 铃声多多
-  async lingsheng (e) {
+  async lingsheng(e) {
     let msg = e.msg.replace(/#|铃声搜索/g, '')
-    let api = `https://xiaobai.klizi.cn/API/music/lingsheng.php?msg=${msg}&n=1`
+    let num = Math.ceil(Math.random() * 15)
+    if (num == 0) num = 1
+    let api = `http://xiaobai.klizi.cn/API/music/lingsheng.php?msg=${msg}&n=${num}`
     let res = await fetch(api).then(res => res.json()).catch(err => logger.error(err))
     if (!res) return e.reply(API_ERROR)
     if (res.title == null && res.author == null) return e.reply('❎ 没有找到相关的歌曲哦~', true)
@@ -267,7 +329,7 @@ export class Fun extends plugin {
   }
 
   /** 半次元话题 */
-  async bcyTopic (e) {
+  async bcyTopic(e) {
     let api = 'https://xiaobai.klizi.cn/API/other/bcy_topic.php'
     let res = await fetch(api).then(res => res.json()).catch(err => logger.error(err))
     if (!res) return e.reply(API_ERROR)
@@ -284,7 +346,7 @@ export class Fun extends plugin {
   }
 
   // api大集合
-  async picture (e) {
+  async picture(e) {
     let { sese, sesepro } = Config.getGroup(e.group_id)
     if (!sese && !sesepro && !e.isMaster) return false
     let key = 'yenai:apiAggregate:CD'
@@ -292,9 +354,9 @@ export class Fun extends plugin {
 
     if (/jktj|接口统计/.test(e.msg)) {
       let msg = ['现接口数量如下']
-      for (let i in picapis) {
+      for (let i in picApis) {
         if (i == 'mode') continue
-        let urls = picapis[i].url || picapis[i]
+        let urls = picApis[i].url || picApis[i]
         msg.push(`\n♡ ${i} => ${Array.isArray(urls) ? urls.length : 1}`)
       }
       return e.reply(msg)
@@ -302,7 +364,7 @@ export class Fun extends plugin {
     // 解析消息中的类型
     let regRet = apiReg.exec(e.msg)
     if (regRet[1] == 'mode') return false
-    let picObj = picapis[_.sample(Object.keys(picapis).filter(item => new RegExp(item).test(regRet[1])))]
+    let picObj = picApis[_.sample(Object.keys(picApis).filter(item => new RegExp(item).test(regRet[1])))]
     if (Array.isArray(picObj)) picObj = _.sample(picObj)
     let urlReg = /^https?:\/\/(([a-zA-Z0-9_-])+(\.)?)*(:\d+)?(\/((\.)?(\?)?=?&?[a-zA-Z0-9_-](\?)?)*)*$/i
     if (!picObj.url && !urlReg.test(encodeURI(picObj)) && !Array.isArray(picObj)) {

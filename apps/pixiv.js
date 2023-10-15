@@ -64,7 +64,7 @@ export class NewPixiv extends plugin {
           fnc: 'pximg'
         },
         {
-          reg: '^#(p站|pixiv)(查看|更换)代理.*$',
+          reg: '^#(p站|pixiv)(查看|更换)代理',
           fnc: 'setProxy',
           permission: 'master'
         },
@@ -93,7 +93,7 @@ export class NewPixiv extends plugin {
         await e.reply(res.msg)
         res.img.length == 1 ? common.recallsendMsg(e, res.img) : common.recallSendForwardMsg(e, res.img, false)
       })
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // p站排行榜
@@ -109,7 +109,7 @@ export class NewPixiv extends plugin {
     let page = common.translateChinaNum(regRet[6])
     await Pixiv.Rank(page, regRet[2], regRet[3], regRet[4])
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 关键词搜图 */
@@ -123,7 +123,7 @@ export class NewPixiv extends plugin {
     let page = common.translateChinaNum(regRet[4])
     await Pixiv[`${regRet[1] ? 's' : 'vilipixS'}earchTags`](regRet[2], page, !setu.getR18(e.group_id))
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 获取热门tag */
@@ -132,7 +132,7 @@ export class NewPixiv extends plugin {
     e.reply(Pixiv.startMsg)
     await Pixiv.PopularTags()
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 以uid搜图**/
@@ -146,7 +146,7 @@ export class NewPixiv extends plugin {
 
     await Pixiv.userIllust(regRet[1], page, !setu.getR18(e.group_id))
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 随机原创插画
@@ -163,7 +163,7 @@ export class NewPixiv extends plugin {
     num = common.translateChinaNum(num)
     await Pixiv.vilipixRandomImg(num)
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // 相关作品
@@ -175,7 +175,7 @@ export class NewPixiv extends plugin {
     let regRet = e.msg.match(/\d+/)
     await Pixiv.relatedIllust(regRet[0], !setu.getR18(e.group_id))
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   // p站单图
@@ -186,7 +186,7 @@ export class NewPixiv extends plugin {
 
     await Pixiv.pximg(ispro)
       .then(res => ispro ? common.recallSendForwardMsg(e, [res]) : common.recallsendMsg(e, res, false, { anony: true }))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 搜索用户 */
@@ -198,7 +198,7 @@ export class NewPixiv extends plugin {
     let page = common.translateChinaNum(regRet[3])
     await Pixiv.searchUser(regRet[1], page, !setu.getR18(e.group_id))
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 推荐作品 */
@@ -210,7 +210,7 @@ export class NewPixiv extends plugin {
       res.length == 1
         ? common.recallsendMsg(e, res[0], true)
         : common.recallSendForwardMsg(e, res)
-    }).catch(err => e.reply(err.message))
+    }).catch(err => common.handleException(e, err))
   }
 
   // 更换代理
@@ -239,20 +239,16 @@ export class NewPixiv extends plugin {
   async loginInfo (e) {
     await Pixiv.loginInfo()
       .then(res => e.reply(res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
-  async _Authentication (e, type, limit = true) {
+  async _Authentication (e, type = 'sese', limit = true) {
     if (e.isMaster) return true
     if (!Config.pixiv.allowPM && !e.isGroup) {
       e.reply('主人已禁用私聊该功能')
       return false
     }
-    const { sese, sesepro } = Config.getGroup(e.group_id)
-    if ((type == 'sese' && !sese && !sesepro) || (type == 'sesepro' && !sesepro)) {
-      e.reply(SWITCH_ERROR)
-      return false
-    }
+    if (!common.checkSeSePermission(e, type)) return false
     if (limit && !await common.limit(e.user_id, 'pixiv', Config.pixiv.limit)) {
       e.reply('您已达今日「Pixiv」次数上限', true, { at: true })
       return false

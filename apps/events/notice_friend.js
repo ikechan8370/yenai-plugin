@@ -1,28 +1,28 @@
 import { common } from '../../model/index.js'
 import { Config } from '../../components/index.js'
 
-Bot.on('notice.friend', async (e) => {
+Bot.on?.('notice.friend', async (e) => {
   let msg
   let forwardMsg
   switch (e.sub_type) {
     case 'increase': {
       if (!Config.whole.friendNumberChange) return false
-      logger.mark('[Yenai-Plugin]新增好友')
+      logger.info('[Yenai-Plugin]新增好友')
       msg = [
         segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-        '[通知 - 新增好友]\n',
-          `好友QQ：${e.user_id}\n`,
+        `[通知(${e.self_id}) - 新增好友]\n`,
+          `好友账号：${e.user_id}\n`,
           `好友昵称：${e.nickname}`
       ]
       break
     }
     case 'decrease': {
       if (!Config.whole.friendNumberChange) return false
-      logger.mark('[Yenai-Plugin]好友减少')
+      logger.info('[Yenai-Plugin]好友减少')
       msg = [
         segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-        '[通知 - 好友减少]\n',
-          `好友QQ：${e.user_id}\n`,
+        `[通知(${e.self_id}) - 好友减少]\n`,
+          `好友账号：${e.user_id}\n`,
           `好友昵称：${e.nickname}`
       ]
       break
@@ -33,7 +33,7 @@ Bot.on('notice.friend', async (e) => {
       if (e.user_id == (e.bot ?? Bot).uin) return false
       // 主人撤回
       if (Config.masterQQ.includes(e.user_id)) return false
-      logger.mark('[Yenai-Plugin]好友撤回')
+      logger.info('[Yenai-Plugin]好友撤回')
       // 读取
       let res = JSON.parse(
         await redis.get(`notice:messagePrivate:${e.message_id}`)
@@ -65,8 +65,8 @@ Bot.on('notice.friend', async (e) => {
       // 消息
       msg = [
         segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-        '[消息 - 好友撤回消息]\n',
-          `好友QQ：${e.user_id}\n`,
+        `[消息(${e.self_id}) - 好友撤回消息]\n`,
+          `好友账号：${e.user_id}\n`,
           `撤回时间：${formatDate(e.time)}\n`,
           '撤回消息：',
           ...res
@@ -75,11 +75,11 @@ Bot.on('notice.friend', async (e) => {
     }
     case 'poke': {
       if (!Config.whole.privateMessage) return false
-      logger.mark('[Yenai-Plugin]好友戳一戳')
+      logger.info('[Yenai-Plugin]好友戳一戳')
       msg = [
         segment.image(`https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`),
-        '[消息 - 戳一戳]\n',
-          `来源QQ：${e.user_id}`
+        `[消息(${e.self_id}) - 戳一戳]\n`,
+          `来源账号：${e.user_id}`
       ]
       break
     }

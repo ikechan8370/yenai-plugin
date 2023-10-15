@@ -88,7 +88,7 @@ export class NewGroupVerify extends plugin {
     try {
       list = await new Ga(e).getNeverSpeak(e.group_id)
     } catch (error) {
-      return e.reply(error.message)
+      return common.handleException(e, error)
     }
     for (let item of list) {
       await verify(item.user_id, e.group_id, e)
@@ -128,7 +128,7 @@ export class NewGroupVerify extends plugin {
 }
 
 // 进群监听
-Bot.on('notice.group.increase', async (e) => {
+Bot.on?.('notice.group.increase', async (e) => {
   logger.mark(`[Yenai-Plugin][进群验证]收到${e.user_id}的进群事件`)
   let { openGroup, DelayTime } = Config.groupverify
 
@@ -142,9 +142,7 @@ Bot.on('notice.group.increase', async (e) => {
 })
 
 // 答案监听
-Bot.on('message', async (e) => {
-  if (!e.isGroup) return false
-
+Bot.on?.('message.group', async (e) => {
   let { openGroup, mode, SuccessMsgs } = Config.groupverify
 
   if (!openGroup.includes(e.group_id)) return
@@ -157,9 +155,9 @@ Bot.on('message', async (e) => {
 
   const { nums, operator } = temp[e.user_id + e.group_id]
 
-  const isAccurateModeOK = mode === '精确' && e.msg == verifyCode
+  const isAccurateModeOK = mode === '精确' && e.raw_message == verifyCode
 
-  const isVagueModeOK = mode === '模糊' && e.msg.includes(verifyCode)
+  const isVagueModeOK = mode === '模糊' && e.raw_message?.includes(verifyCode)
 
   const isOK = isAccurateModeOK || isVagueModeOK
 
@@ -176,19 +174,19 @@ Bot.on('message', async (e) => {
     if (remainTimes > 0) {
       await e.recall()
 
-      const msg = `❎ 验证失败，你还有「${remainTimes}」次机会，请发送「${nums[0]} ${operator} ${nums[1]}」的运算结果`
+      const msg = `\n❎ 验证失败\n你还有「${remainTimes}」次机会\n请发送「${nums[0]} ${operator} ${nums[1]}」的运算结果`
       return await e.reply([segment.at(e.user_id), msg])
     }
     clearTimeout(kickTimer)
     clearTimeout(remindTimer)
-    await e.reply([segment.at(e.user_id), '验证失败，请重新申请'])
+    await e.reply([segment.at(e.user_id), '\n验证失败，请重新申请'])
     delete temp[e.user_id + e.group_id]
     return await e.group.kickMember(e.user_id)
   }
 })
 
 // 主动退群
-Bot.on('notice.group.decrease', async (e) => {
+Bot.on?.('notice.group.decrease', async (e) => {
   if (!e.group.is_admin && !e.group.is_owner) return
 
   if (!temp[e.user_id + e.group_id]) return
@@ -222,7 +220,7 @@ async function verify (user_id, group_id, e) {
   const verifyCode = String(operator === '-' ? m - n : m + n)
   logger.mark(`[Yenai-Plugin][进群验证]答案：${verifyCode}`)
   const kickTimer = setTimeout(async () => {
-    e.reply([segment.at(user_id), ' 验证超时，移出群聊，请重新申请'])
+    e.reply([segment.at(user_id), '\n验证超时，移出群聊，请重新申请'])
 
     delete temp[user_id + group_id]
 
@@ -235,14 +233,14 @@ async function verify (user_id, group_id, e) {
 
   const remindTimer = setTimeout(async () => {
     if (shouldRemind && temp[user_id + group_id].remindTimer) {
-      const msg = ` 验证仅剩最后一分钟，请发送「${m} ${operator} ${n}」的运算结果，否则将会被移出群聊`
+      const msg = ` \n验证仅剩最后一分钟\n请发送「${m} ${operator} ${n}」的运算结果\n否则将会被移出群聊`
 
       await e.reply([segment.at(user_id), msg])
     }
     clearTimeout(remindTimer)
   }, Math.abs(time * 1000 - 60000))
 
-  const msg = ` 欢迎，请在「${time}」秒内发送「${m} ${operator} ${n}」的运算结果，否则将会被移出群聊`
+  const msg = ` 欢迎！\n请在「${time}」秒内发送\n「${m} ${operator} ${n}」的运算结果\n否则将会被移出群聊`
 
   // 消息发送成功才写入
   if (await e.reply([segment.at(user_id), msg])) {

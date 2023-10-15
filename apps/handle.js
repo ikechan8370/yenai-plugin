@@ -19,7 +19,7 @@ export class NewHandle extends plugin {
           fnc: 'Handle'
         },
         {
-          reg: '^#?回复.*$',
+          reg: '^#?回复',
           fnc: 'Replys',
           event: 'message.private'
         },
@@ -54,8 +54,11 @@ export class NewHandle extends plugin {
     if (!e.isMaster) return false
     let yes = !!/同意/.test(e.msg)
 
-    let FriendAdd = (await (e.bot ?? Bot).getSystemMsg())
-      .filter(item => item.request_type == 'friend' && item.sub_type == 'add')
+    const systemMsg = (await (e.bot ?? Bot).getSystemMsg());
+    const FriendAdd = systemMsg.filter(
+      item => item.request_type == 'friend' &&
+      (item.sub_type === 'add' || item.sub_type === 'single')
+    );
 
     if (_.isEmpty(FriendAdd)) return e.reply('暂无好友申请(。-ω-)zzz', true)
 
@@ -208,7 +211,7 @@ export class NewHandle extends plugin {
       } catch {
         return e.reply('❎ 消息可能已过期')
       }
-      if (/好友消息/.test(res[0]) && /好友QQ/.test(res[1])) {
+      if (/好友消息/.test(res[0]) && /好友账号/.test(res[1])) {
         qq = res[1].match(/[1-9]\d*/g)
       } else if (/群临时消息/.test(res[0])) {
         qq = res[2].match(/[1-9]\d*/g)
@@ -235,7 +238,7 @@ export class NewHandle extends plugin {
       logger.mark(`${e.logFnc}回复临时消息`)
       return (e.bot ?? Bot).sendTempMsg(group, qq, e.message)
         .then(() => { e.reply('✅ 已把消息发给它了哦~') })
-        .catch((err) => e.reply(`❎ 发送失败\n错误信息为:${err.message}`))
+        .catch((err) => common.handleException(e, err, { MsgTemplate: '❎ 发送失败\n错误信息为:{error}' }))
     }
 
     if (!/^\d+$/.test(qq)) return e.reply('❎ QQ号不正确，人家做不到的啦>_<~')
@@ -247,7 +250,7 @@ export class NewHandle extends plugin {
     (e.bot ?? Bot).pickFriend(qq)
       .sendMsg(e.message)
       .then(() => { e.reply('✅ 已把消息发给它了哦~') })
-      .catch((err) => e.reply(`❎ 发送失败\n错误信息为:${err.message}`))
+      .catch((err) => common.handleException(e, err, { MsgTemplate: '❎ 发送失败\n错误信息为:{error}' }))
   }
 
   // 加群员为好友
