@@ -113,7 +113,7 @@ export class NewState extends plugin {
       // 运行时间
       const runTime = common.formatTime(Date.now() / 1000 - bot.stat?.start_time, 'dd天hh小时mm分', false)
       // Bot版本
-      const botVersion = bot.version ? `${bot.version.app_full_name ? bot.version.app_full_name : bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
+      const botVersion = bot.version ? `${bot.version.app_name ? bot.version.app_name : bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
       BotStatus += `<div class="box">
     <div class="tb">
         <div class="avatar">
