@@ -43,44 +43,8 @@ export class Fun extends plugin {
           fnc: 'youdao'
         },
         {
-          reg: '^#?(我要|给我)?(资料卡)?(点赞|赞我)|赞(他|她|它|TA|ta|Ta)?$',
-          fnc: 'thumbUp'
-        },
-        {
           reg: 'github.com/[a-zA-Z0-9-]{1,39}/[a-zA-Z0-9_-]{1,100}',
           fnc: 'GH'
-        },
-        {
-          reg: '^#?coser$',
-          fnc: 'coser'
-        },
-        // {
-        //   reg: `^#?来点(${Object.keys(heisiType).join('|')})$`,
-        //   fnc: 'heisiwu'
-        // },
-        {
-          reg: '^#?铃声搜索.*$',
-          fnc: 'lingsheng'
-        },
-        {
-          reg: '^#?半次元话题$',
-          fnc: 'bcyTopic'
-        },
-        {
-          reg: apiReg,
-          fnc: 'picture'
-        },
-        // {
-        //   reg: '^#?来点神秘图(\\d+|s.*)?$',
-        //   fnc: 'mengdui'
-        // },
-        {
-          reg: `^#(${Object.keys(pandadiuType).join('|')})?acg.*$`,
-          fnc: 'acg'
-        },
-        {
-          reg: `^#来点(${Object.keys(funApi.xiurenTypeId).join('|')})$`,
-          fnc: 'xiuren'
         }
 
       ]

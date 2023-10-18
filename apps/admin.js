@@ -81,11 +81,6 @@ export class Admin extends plugin {
           permission: 'master'
         },
         {
-          reg: '^#椰奶(sese|涩涩)?设置$',
-          fnc: 'Settings',
-          permission: 'master'
-        },
-        {
           reg: '^#椰奶(启用|禁用)全部通知$',
           fnc: 'SetAllNotice',
           permission: 'master'

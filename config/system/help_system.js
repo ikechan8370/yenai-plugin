@@ -187,11 +187,6 @@ export const helpList = [{
       desc: '随机唱鸭'
     },
     {
-      icon: 13,
-      title: '#赞我',
-      desc: '给你点一个大大的赞'
-    },
-    {
       icon: 15,
       title: '#支付宝到账<数字>',
       desc: '听到账爽一下'
@@ -199,57 +194,7 @@ export const helpList = [{
       icon: 17,
       title: '#翻译',
       desc: '有道翻译'
-    }, {
-      icon: 9,
-      title: '#搜索菜单',
-      desc: '各大引擎搜索'
-    }, {
-      icon: 1,
-      title: '#半次元话题',
-      desc: '=-='
-    }, {
-      icon: 7,
-      title: '#铃声搜索',
-      desc: '铃声多多'
-    }, {
-      icon: 1,
-      title: '#bgg搜索<关键词>',
-      desc: '桌游搜索'
-    }, {
-      icon: 19,
-      title: '#bgg排行',
-      desc: '桌游排行'
     }]
-},
-{
-  group: '搜图搜番',
-  list: [
-    {
-      title: '#搜图',
-      desc: '默认SauceNAO',
-      icon: 10
-    },
-    {
-      title: '#搜番',
-      desc: 'WhatAnime',
-      icon: 6
-    },
-    {
-      title: '#(SauceNAO|sn)搜图',
-      desc: 'SauceNAO',
-      icon: 1
-    },
-    {
-      title: '#(Ascii2D|ac)搜图',
-      desc: 'Ascii2D',
-      icon: 5
-    },
-    {
-      title: '#设置SauceNAOApiKey<key>',
-      desc: 'SauceNAOApiKey',
-      icon: 9
-    }
-  ]
 },
 {
   group: '设置，版本相关',
