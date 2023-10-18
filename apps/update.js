@@ -33,7 +33,7 @@ export class Update extends plugin {
    * @returns
    */
   async update () {
-    if (!this.e.isMaster) return false
+    if (!(this.e.isMaster)) { return true }
 
     /** 检查是否正在更新中 */
     if (uping) {

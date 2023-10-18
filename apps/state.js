@@ -60,7 +60,8 @@ export class NewState extends plugin {
 
     // 网络测试
     let psTest = []
-    let { psTestSites, psTestTimeout } = Config.state
+    let { psTestSites, psTestTimeout, backdrop } = Config.state
+    State.chartData.backdrop = backdrop
     psTestSites && promiseTaskList.push(...psTestSites?.map(i => State.getNetworkLatency(i.url, psTestTimeout).then(res => psTest.push({
       first: i.name,
       tail: res
@@ -92,7 +93,19 @@ export class NewState extends plugin {
     // nodejs版本
     const nodeVersion = process.version
     let BotStatus = ""
-    for (const i of e.msg.includes('pro') && Array.isArray(Bot.uin) ? Bot.uin : [e.self_id]) {
+
+    /** bot列表 */
+    let BotList = [e.self_id]
+    /** TRSS */
+    if (e.msg.includes("pro") && Array.isArray(Bot?.uin)) {
+      BotList = Bot.uin
+    }
+    /** ws、qg、wx等多bot */
+    else if (!Array.isArray(Bot?.uin) && Bot?.adapter && Bot.adapter.includes(Bot.uin)) {
+      BotList = Bot.adapter
+    }
+
+    for (const i of BotList) {
       const bot = Bot[i]
       if (!bot?.uin) continue
       // 头像
@@ -102,7 +115,7 @@ export class NewState extends plugin {
       // 在线状态
       const onlineStatus = status[bot.status] || "在线"
       // 登录平台版本
-      const platform = bot.apk ? `${bot.apk.display} v${bot.apk.version}` : bot.version.version || "未知"
+      const platform = bot.apk ? `${bot.apk.display} v${bot.apk.version}` : (bot.version?.app_version ? bot.version?.app_version : bot.version.version) || "未知"
       // 收
       const recv = bot.stat?.recv_msg_cnt || "未知"
       // 好友数
@@ -112,7 +125,7 @@ export class NewState extends plugin {
       // 运行时间
       const runTime = common.formatTime(Date.now() / 1000 - bot.stat?.start_time, 'dd天hh小时mm分', false)
       // Bot版本
-      const botVersion = bot.version ? `${bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
+      const botVersion = bot.version ? `${bot.version.app_name ? bot.version.app_name : bot.version.name}(${bot.version.id})${bot.apk ? ` ${bot.version.version}` : ""}` : `ICQQ(QQ) v${require('icqq/package.json').version}`
       BotStatus += `<div class="box">
     <div class="tb">
         <div class="avatar">

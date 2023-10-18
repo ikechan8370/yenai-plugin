@@ -35,7 +35,7 @@ export class Fun extends plugin {
           fnc: 'Sing'
         },
         {
-          reg: '^#支付宝到账.*$',
+          reg: '^#支付宝到账',
           fnc: 'ZFB'
         },
         {
@@ -88,112 +88,6 @@ export class Fun extends plugin {
     e.reply(results, true)
   }
 
-  /** 点赞 */
-  async thumbUp (e) {
-    if ((e.bot ?? Bot).config?.platform == 3) {
-      return logger.error(`${e.logFnc}手表协议暂不支持点赞请更换协议后重试`)
-    }
-    /** 判断是赞自己还是赞别人 */
-    if (e.at) {
-      /** 判断是否为好友 */
-      let isFriend = await (e.bot ?? Bot).fl.get(e.at)
-      let allowLikeByStrangers = Config.whole.Strangers_love
-      if (!isFriend && !allowLikeByStrangers) return e.reply('不加好友不点🙄', true)
-      /** 执行点赞 */
-      let n = 0
-      let failsMsg = '今天已经点过了，还搁这讨赞呢！！！'
-      while (true) {
-        let res = null
-        try {
-          res = await new QQApi(e).thumbUp(e.at, 10)
-        } catch (error) {
-          logger.error(error)
-          return common.handleException(e, error)
-        }
-        logger.debug(`${e.logFnc}给${e.at}点赞`, res)
-        if (res.code != 0) {
-          if (res.code == 1) {
-            failsMsg = '点赞失败，请检查是否开启陌生人点赞或添加好友'
-          } else {
-            failsMsg = res.msg
-          }
-          break
-        } else {
-          n += 10
-        }
-      }
-      let successMsg = `给${e.at}点了${n}下哦，记得回我~ ${isFriend ? '' : '(如点赞失败请添加好友)'}`
-      const avatar = `https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.at}`
-      const successFn = _.sample(['ganyu', 'zan'])
-
-      /** 判断点赞是否成功 */
-      let msg = n > 0
-        ? [
-          `\n${successMsg}`,
-          segment.image((await memes[successFn](avatar)) ||
-            _.sample(successImgs) + e.user_id)
-          ]
-        : [
-          `\n${failsMsg}`,
-          segment.image((await memes.crawl(avatar)) ||
-            _.sample(faildsImgs) + e.user_id)
-          ]
-
-      /** 回复 */
-      e.reply(msg, true, { at: e.at })
-    } else {
-      /** 判断是否命中正则 */
-      if (!e.msg.includes('我', '赞', '点')) { return true };
-      /** 判断是否为好友 */
-      let isFriend = await (e.bot ?? Bot).fl.get(e.user_id)
-      let allowLikeByStrangers = Config.whole.Strangers_love
-      if (!isFriend && !allowLikeByStrangers) return e.reply('不加好友不点🙄', true)
-
-      /** 执行点赞 */
-      let n = 0
-      let failsMsg = '今天已经点过了，还搁这讨赞呢！！！'
-      while (true) {
-        let res = null
-        try {
-          res = await new QQApi(e).thumbUp(e.user_id, 10)
-        } catch (error) {
-          logger.error(error)
-          return common.handleException(e, error)
-        }
-        logger.debug(`${e.logFnc}给${e.user_id}点赞`, res)
-        if (res.code != 0) {
-          if (res.code == 1) {
-            failsMsg = '点赞失败，请检查是否开启陌生人点赞或添加好友'
-          } else {
-            failsMsg = res.msg
-          }
-          break
-        } else {
-          n += 10
-        }
-      }
-      let successMsg = `给你点了${n}下哦，记得回我~ ${isFriend ? '' : '(如点赞失败请添加好友)'}`
-      const avatar = `https://q1.qlogo.cn/g?b=qq&s=100&nk=${e.user_id}`
-      const successFn = _.sample(['ganyu', 'zan'])
-
-      /** 判断点赞是否成功 */
-      let msg = n > 0
-        ? [
-          `\n${successMsg}`,
-          segment.image((await memes[successFn](avatar)) ||
-            _.sample(successImgs) + e.user_id)
-          ]
-        : [
-          `\n${failsMsg}`,
-          segment.image((await memes.crawl(avatar)) ||
-            _.sample(faildsImgs) + e.user_id)
-          ]
-
-      /** 回复 */
-      e.reply(msg, true, { at: true })
-    }
-  }
-
   // github
   async GH (e) {
     const api = 'https://opengraph.githubassets.com'
@@ -209,93 +103,6 @@ export class Fun extends plugin {
       // const [user, repo] = [res[1], res[2].split('#')[0]]
       // e.reply(segment.image(`${api}/${id}/${user}/${repo}`))
     }
-  }
-
-  // coser
-  async coser (e) {
-    if (!common.checkSeSePermission(e)) return false
-
-    e.reply(START_EXECUTION)
-    await funApi.coser()
-      .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => common.handleException(e, err))
-  }
-
-  // cos/acg搜索
-  async acg (e) {
-    if (!common.checkSeSePermission(e)) return false
-    e.reply(START_EXECUTION)
-    const reg = new RegExp(`^#(${Object.keys(pandadiuType).join('|')})?acg(.*)$`)
-    const type = e.msg.match(reg)
-    await funApi.pandadiu(type[1], type[2])
-      .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => common.handleException(e, err))
-  }
-
-  // 黑丝
-  async heisiwu (e) {
-    if (!common.checkSeSePermission(e, 'sesepro')) return false
-
-    e.reply(START_EXECUTION)
-    // 获取类型
-    const { type, page } = heisiType[e.msg.match(/#?来点(.*)/)[1]]
-    await funApi.heisiwu(type, page)
-      .then(res => common.recallSendForwardMsg(e, _.take(res, 20)))
-      .catch(err => common.handleException(e, err))
-  }
-
-  // 萌堆
-  async mengdui (e) {
-    if (!common.checkSeSePermission(e, 'sesepro')) return false
-    // 开始执行
-    e.reply(START_EXECUTION)
-    let regRet = e.msg.match(/#?来点神秘图(s)?(.*)/)
-    await funApi.mengdui(regRet[2], regRet[1])
-      .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => common.handleException(e, err))
-  }
-
-  async xiuren (e) {
-    if (!common.checkSeSePermission(e, 'pro')) return false
-    // 开始执行
-    e.reply(START_EXECUTION)
-    await funApi.xiuren(e.msg.replace(/#?来点/, ''))
-      .then(res => common.recallSendForwardMsg(e, res))
-      .catch(err => common.handleException(e, err))
-  }
-
-  // 铃声多多
-  async lingsheng (e) {
-    let msg = e.msg.replace(/#|铃声搜索/g, '')
-    let num = Math.ceil(Math.random() * 15)
-    if (num == 0) num = 1
-    let api = `http://xiaobai.klizi.cn/API/music/lingsheng.php?msg=${msg}&n=${num}`
-    let res = await fetch(api).then(res => res.json()).catch(err => logger.error(err))
-    if (!res) return e.reply(API_ERROR)
-    if (res.title == null && res.author == null) return e.reply('❎ 没有找到相关的歌曲哦~', true)
-
-    await e.reply([
-      `标题：${res.title}\n`,
-      `作者：${res.author}`
-    ])
-    await e.reply(await uploadRecord(res.aac, 0, false))
-  }
-
-  /** 半次元话题 */
-  async bcyTopic (e) {
-    let api = 'https://xiaobai.klizi.cn/API/other/bcy_topic.php'
-    let res = await fetch(api).then(res => res.json()).catch(err => logger.error(err))
-    if (!res) return e.reply(API_ERROR)
-    if (res.code != 200) return e.reply('❎ 出错辣' + JSON.stringify(res))
-    if (_.isEmpty(res.data)) return e.reply('请求错误！无数据，请稍后再试')
-    let msg = []
-    for (let i of res.data) {
-      if (!i.title || _.isEmpty(i.image)) continue
-      msg.push(i.title)
-      msg.push(i.image.map(item => segment.image(item)))
-    }
-    if (_.isEmpty(msg)) return this.bcyTopic(e)
-    common.getforwardMsg(e, msg)
   }
 
   // api大集合

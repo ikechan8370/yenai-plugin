@@ -72,18 +72,15 @@ export class Admin extends plugin {
       rule: [
         {
           reg: SwitchCfgReg,
-          fnc: 'ConfigSwitch',
-          permission: 'master'
+          fnc: 'ConfigSwitch'
         },
         {
           reg: NumberCfgReg,
-          fnc: 'ConfigNumber',
-          permission: 'master'
+          fnc: 'ConfigNumber'
         },
         {
           reg: '^#椰奶(启用|禁用)全部通知$',
-          fnc: 'SetAllNotice',
-          permission: 'master'
+          fnc: 'SetAllNotice'
         }
       ]
     })
@@ -91,6 +88,7 @@ export class Admin extends plugin {
 
   // 更改配置
   async ConfigSwitch (e) {
+    if (!(this.e.isMaster)) { return false }
     // 解析消息
     let regRet = SwitchCfgReg.exec(e.msg)
     let key = regRet[1]
@@ -124,6 +122,7 @@ export class Admin extends plugin {
 
   // 修改数字设置
   async ConfigNumber (e) {
+    if (!(this.e.isMaster)) { return false }
     let regRet = e.msg.match(NumberCfgReg)
     let type = NumberCfgType[regRet[1]]
     let number = checkNumberValue(regRet[2], type.limit)
@@ -133,6 +132,7 @@ export class Admin extends plugin {
 
   // 修改全部通知设置
   async SetAllNotice (e) {
+    if (!(this.e.isMaster)) { return false }
     let yes = /启用/.test(e.msg)
     for (let i in NoticeCfgType) {
       Config.modify('whole', NoticeCfgType[i], yes)
@@ -141,6 +141,7 @@ export class Admin extends plugin {
   }
 
   async Settings (e) {
+    if (!(this.e.isMaster)) { return false }
     if (/sese|涩涩/.test(e.msg)) {
       this.SeSe_Settings(e)
     } else {
