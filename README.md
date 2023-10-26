@@ -46,10 +46,7 @@
 
 ```
 // 使用github
-git clone --depth=1 https://github.com/yeyang52/yenai-plugin.git ./plugins/yenai-plugin
-
-// 使用gitee(可能更新不及时)
-git clone --depth=1 https://gitee.com/yeyang52/yenai-plugin.git ./plugins/yenai-plugin
+git clone --depth=1 https://github.com/ikechan8370/yenai-plugin.git ./plugins/yenai-plugin
 ```
 
 2. 安装依赖(可选：不安装依赖将无法使用一些功能)
